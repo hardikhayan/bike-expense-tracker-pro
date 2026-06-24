@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Expense & Bike Tracker Premium v4.0</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #111827; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding-bottom: 40px; }
+        
+        /* Auth Screen Styling */
+        #authScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #111827; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        header { background-color: #4f46e5; padding: 16px; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .header-container { max-width: 450px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        
+        .main-content { max-width: 450px; margin: 24px auto 0 auto; padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
+        .alert-banner { background-color: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fee2e2; padding: 12px; border-radius: 12px; font-size: 14px; text-align: center; }
+        .hidden { display: none !important; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .card { background-color: #1f2937; padding: 16px; border-radius: 16px; border: 1px solid #374151; }
+        .card-title { font-size: 12px; color: #9ca3af; font-weight: 500; }
+        .card-value { font-size: 22px; font-weight: bold; margin-top: 4px; }
+        
+        .text-indigo { color: #818cf8; } .text-emerald { color: #34d399; } .text-amber { color: #fbbf24; } .text-purple { color: #c084fc; }
+        
+        .form-section { background-color: #1f2937; padding: 20px; border-radius: 16px; border: 1px solid #374151; }
+        .form-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px; font-weight: 600; }
+        
+        .form-input, .form-select { width: 100%; background-color: #111827; border: 1px solid #374151; border-radius: 12px; padding: 11px 14px; color: white; font-size: 14px; transition: border 0.2s; }
+        .form-input:focus, .form-select:focus { border-color: #6366f1; outline: none; }
+        
+        .btn-submit { width: 100%; background-color: #4f46e5; border: none; color: white; font-size: 14px; font-weight: 600; padding: 12px; border-radius: 12px; cursor: pointer; transition: background 0.2s; margin-top: 8px; }
+        .btn-submit:hover { background-color: #4338ca; }
+        
+        /* Bar chart */
+        .analytics-box { background-color: #1f2937; padding: 20px; border-radius: 16px; border: 1px solid #374151; }
+        .progress-bar-container { margin-top: 12px; background-color: #111827; border-radius: 8px; height: 14px; overflow: hidden; display: flex; }
+        .progress-segment { height: 100%; transition: width 0.3s ease; }
+        .legend-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; font-size: 12px; color: #9ca3af; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        
+        /* Service Reminders styling */
+        .reminder-box { background-color: #111827; padding: 12px; border-radius: 12px; border-left: 4px solid #fbbf24; margin-top: 8px; font-size: 13px; }
+
+        /* History component style */
+        .history-section { background-color: #1f2937; padding: 20px; border-radius: 16px; border: 1px solid #374151; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .btn-csv { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 500; }
+        
+        .log-item { background-color: #111827; border: 1px solid rgba(55, 65, 81, 0.6); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+        .log-date { font-size: 10px; background-color: #1f2937; padding: 2px 6px; border-radius: 4px; color: #9ca3af; margin-left: 6px; }
+        .log-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+        .btn-delete { color: #ef4444; background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px 8px; }
+        .log-list-container { max-height: 250px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="authScreen">
+        <div class="form-section" style="width: 100%; max-width: 340px; text-align: center;">
+            <h2 style="margin-bottom: 8px;">🔐 Tracker Lock</h2>
+            <p style="font-size: 12px; color: #9ca3af; margin-bottom: 20px;">Mavaa! Enter your security entry PIN code</p>
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" class="form-input" style="text-align: center; font-size: 24px; letter-spacing: 8px; margin-bottom: 16px;">
+            <button onclick="checkPIN()" class="btn-submit" style="margin-top: 0;">Unlock App</button>
+            <p id="authError" style="color: #ef4444; font-size: 12px; margin-top: 10px; display: none;">Wrong PIN mavaa! Try again.</p>
+        </div>
+    </div>
+
+    <header>
+        <div class="header-container">
+            <h1 style="font-size: 18px; font-weight: bold;">🏍️ Tracker Pro</h1>
+            <span style="background-color: #312e81; font-size: 11px; padding: 4px 8px; border-radius: 9999px; font-weight: 600;">v4.0 Final Stable</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+
+        <div id="budgetAlert" class="hidden alert-banner">
+            ⚠️ Mavaa! Eeroju kharchulu ₹200 cross ayyay! Kastha chusko!
+        </div>
+
+        <section class="grid-2">
+            <div class="card">
+                <p class="card-title">Total Odo Run</p>
+                <p class="card-value text-indigo" id="totalKM">0 KM</p>
+            </div>
+            <div class="card">
+                <p class="card-title">Total Petrol Cost</p>
+                <p class="card-value text-emerald" id="totalPetrol">₹0</p>
+            </div>
+            <div class="card">
+                <p class="card-title">Accurate Mileage</p>
+                <p class="card-value text-amber" id="avgMileage">0 km/l</p>
+            </div>
+            <div class="card">
+                <p class="card-title">Other Expenses</p>
+                <p class="card-value text-purple" id="totalOthers">₹0</p>
+            </div>
+        </section>
+
+        <section class="form-section" style="background-color: #1e1b4b; border-color: #312e81;">
+            <h3 style="font-size: 14px; font-weight: 600; color: #c7d2fe; display: flex; align-items: center; gap: 6px;">
+                🔧 Bike Service Milestone Status
+            </h3>
+            <div id="serviceStatus" class="reminder-box">
+                Loading live tracker metric information...
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2 class="form-title">➕ Add Daily Log Entry</h2>
+            <form id="trackerForm">
+                <div class="form-group">
+                    <label class="form-label">Log Date</label>
+                    <input type="date" id="entryDate" required class="form-input">
+                </div>
+
+                <div class="grid-2 form-group">
+                    <div>
+                        <label class="form-label">Start Odo KM</label>
+                        <input type="number" id="startKM" placeholder="0" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">End Odo KM</label>
+                        <input type="number" id="endKM" placeholder="0" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Village / Location Visit Route</label>
+                    <input type="text" id="villageName" placeholder="e.g. Rampur Rural Visit" class="form-input">
+                </div>
+
+                <div class="grid-2 form-group">
+                    <div>
+                        <label class="form-label">Expense Category</label>
+                        <select id="category" class="form-select" onchange="togglePetrolCategoryView()">
+                            <option value="Petrol">Petrol Purchase</option>
+                            <option value="Food">Food / Tea</option>
+                            <option value="Maintenance">Bike Maintenance</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Total Amount Paid (₹)</label>
+                        <input type="number" id="amount" placeholder="0" required class="form-input">
+                    </div>
+                </div>
+
+                <div id="petrolLitresGroup" class="form-group">
+                    <label class="form-label">Exact Litres count purchased (L)</label>
+                    <input type="number" id="petrolLitres" step="0.001" placeholder="e.g. 1.45" class="form-input">
+                </div>
+
+                <button type="submit" class="btn-submit">Save Entry Data</button>
+            </form>
+        </section>
+
+        <section class="analytics-box">
+            <h2 style="font-size: 15px; font-weight: 600;">Expense Category Distribution Matrix</h2>
+            <div class="progress-bar-container">
+                <div id="barPetrol" class="progress-segment" style="background-color: #fbbf24; width: 0%;"></div>
+                <div id="barFood" class="progress-segment" style="background-color: #10b981; width: 0%;"></div>
+                <div id="barMaint" class="progress-segment" style="background-color: #6366f1; width: 0%;"></div>
+                <div id="barOthers" class="progress-segment" style="background-color: #a855f7; width: 0%;"></div>
+            </div>
+            <div class="legend-container">
+                <div class="legend-item"><span class="dot" style="background-color: #fbbf24;"></span>Petrol (<span id="pctPetrol">0</span>%)</div>
+                <div class="legend-item"><span class="dot" style="background-color: #10b981;"></span>Food (<span id="pctFood">0</span>%)</div>
+                <div class="legend-item"><span class="dot" style="background-color: #6366f1;"></span>Maint (<span id="pctMaint">0</span>%)</div>
+                <div class="legend-item"><span class="dot" style="background-color: #a855f7;"></span>Others (<span id="pctOthers">0</span>%)</div>
+            </div>
+        </section>
+
+        <section class="history-section">
+            <div class="history-header">
+                <h2 style="font-size: 15px; font-weight: 600;">Operational Logs Grid</h2>
+                <button type="button" onclick="exportToCSV()" class="btn-csv">Backup Data Spreadsheet</button>
+            </div>
+
+            <div class="grid-2 form-group">
+                <input type="text" id="searchFilter" oninput="renderData()" placeholder="Search location/date..." class="form-input" style="padding: 7px 10px; font-size: 12px;">
+                <select id="typeFilter" onchange="renderData()" class="form-select" style="padding: 7px 10px; font-size: 12px;">
+                    <option value="All">All Categories</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Food">Food</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+
+            <div id="logList" class="log-list-container"></div>
+        </section>
+
+    </main>
+
+    <script>
+        // Security PIN settings (Default: 1234 - change as required)
+        const SECURE_PIN = "1234";
+
+        function checkPIN() {
+            const userInput = document.getElementById('pinInput').value;
+            const errorMsg = document.getElementById('authError');
+            if(userInput === SECURE_PIN) {
+                document.getElementById('authScreen').classList.add('hidden');
+                sessionStorage.setItem('isTrackerUnlocked', 'true');
+            } else {
+                errorMsg.style.display = "block";
+                document.getElementById('pinInput').value = '';
+            }
+        }
+
+        // Persistent State Management Engine
+        let trackerData = JSON.parse(localStorage.getItem('trackerData')) || [];
+        document.getElementById('entryDate').valueAsDate = new Date();
+
+        function togglePetrolCategoryView() {
+            const category = document.getElementById('category').value;
+            const petrolGroup = document.getElementById('petrolLitresGroup');
+            const litresInput = document.getElementById('petrolLitres');
+            if (category === 'Petrol') {
+                petrolGroup.classList.remove('hidden');
+                litresInput.setAttribute('required', 'required');
+            } else {
+                petrolGroup.classList.add('hidden');
+                litresInput.removeAttribute('required');
+            }
+        }
+
+        document.getElementById('trackerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('entryDate').value;
+            const startKM = parseFloat(document.getElementById('startKM').value) || 0;
+            const endKM = parseFloat(document.getElementById('endKM').value) || 0;
+            const village = document.getElementById('villageName').value.trim() || 'Local Visit';
+            const category = document.getElementById('category').value;
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const litres = category === 'Petrol' ? (parseFloat(document.getElementById('petrolLitres').value) || 0) : 0;
+
+            if (endKM > 0 && endKM < startKM) {
+                alert("Mavaa! End KM epudu Start KM kante ekkuva undali!");
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                date,
+                startKM,
+                endKM,
+                village,
+                category,
+                amount,
+                litres
+            };
+
+            trackerData.unshift(newEntry);
+            saveAndRefreshAll();
+            
+            document.getElementById('startKM').value = '';
+            document.getElementById('endKM').value = '';
+            document.getElementById('villageName').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('petrolLitres').value = '';
+        });
+
+        function saveAndRefreshAll() {
+            localStorage.setItem('trackerData', JSON.stringify(trackerData));
+            renderDashboard();
+            renderData();
+            updateOfflineChart();
+        }
+
+        function deleteEntry(id) {
+            if(confirm("Entry delete cheyala mavaa?")) {
+                trackerData = trackerData.filter(item => item.id !== id);
+                saveAndRefreshAll();
+            }
+        }
+
+        function renderDashboard() {
+            let totalKM = 0;
+            let totalPetrol = 0;
+            let totalOthers = 0;
+            let totalLitres = 0;
+            let todayTotal = 0;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            trackerData.forEach(item => {
+                if (item.endKM > item.startKM) {
+                    totalKM += (item.endKM - item.startKM);
+                }
+                if (item.category === 'Petrol') {
+                    totalPetrol += item.amount;
+                    totalLitres += (item.litres || 0);
+                } else {
+                    totalOthers += item.amount;
+                }
+                if (item.date === todayStr) {
+                    todayTotal += item.amount;
+                }
+            });
+
+            const alertBanner = document.getElementById('budgetAlert');
+            if (todayTotal > 200) {
+                alertBanner.classList.remove('hidden');
+            } else {
+                alertBanner.classList.add('hidden');
+            }
+
+            let mileage = 0;
+            if (totalLitres > 0 && totalKM > 0) {
+                mileage = (totalKM / totalLitres).toFixed(2);
+            }
+
+            document.getElementById('totalKM').innerText = `${totalKM} KM`;
+            document.getElementById('totalPetrol').innerText = `₹${totalPetrol}`;
+            document.getElementById('totalOthers').innerText = `₹${totalOthers}`;
+            document.getElementById('avgMileage').innerText = `${mileage} km/l`;
+
+            // Service milestone tracking rule calculations (3000 KM threshold)
+            const serviceStatus = document.getElementById('serviceStatus');
+            const baseKmLeft = 3000 - (totalKM % 3000);
+            if(baseKmLeft <= 300) {
+                serviceStatus.style.borderLeftColor = "#ef4444";
+                serviceStatus.innerHTML = `⚠️ <b>Service Alert:</b> Only ${baseKmLeft} KM left for next standard bike checkup routine maintenance milestone!`;
+            } else {
+                serviceStatus.style.borderLeftColor = "#fbbf24";
+                serviceStatus.innerHTML = `🏁 Next mandatory oil change service scheduling required in exactly <b>${baseKmLeft} KM</b>.`;
+            }
+        }
+
+        function renderData() {
+            const searchVal = document.getElementById('searchFilter').value.toLowerCase();
+            const filterType = document.getElementById('typeFilter').value;
+            const logList = document.getElementById('logList');
+            
+            logList.innerHTML = '';
+
+            const filtered = trackerData.filter(item => {
+                const matchesSearch = item.date.includes(searchVal) || item.category.toLowerCase().includes(searchVal) || item.village.toLowerCase().includes(searchVal);
+                const matchesType = filterType === 'All' || item.category === filterType;
+                return matchesSearch && matchesType;
+            });
+
+            if (filtered.length === 0) {
+                logList.innerHTML = `<p style="text-align: center; font-size: 12px; color: #6b7280; padding: 16px 0;">No matching log entry structures found.</p>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const diffKM = item.endKM > item.startKM ? (item.endKM - item.startKM) : 0;
+                const div = document.createElement('div');
+                div.className = "log-item";
+                
+                let detailText = `📍 ${item.village}`;
+                if (diffKM > 0) {
+                    detailText += ` | 🏍️ ${diffKM} KM (${item.startKM}-${item.endKM})`;
+                }
+                if (item.category === 'Petrol' && item.litres > 0) {
+                    detailText += ` | ⛽ ${item.litres} L`;
+                }
+
+                div.innerHTML = `
+                    <div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-weight: 600;">${item.category}</span>
+                            <span class="log-date">${item.date}</span>
+                        </div>
+                        <div class="log-sub">${detailText}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-weight: bold;">₹${item.amount}</span>
+                        <button onclick="deleteEntry(${item.id})" class="btn-delete">✕</button>
+                    </div>
+                `;
+                logList.appendChild(div);
+            });
+        }
+
+        function updateOfflineChart() {
+            let pCost = 0, fCost = 0, mCost = 0, oCost = 0;
+            trackerData.forEach(item => {
+                if(item.category === 'Petrol') pCost += item.amount;
+                else if(item.category === 'Food') fCost += item.amount;
+                else if(item.category === 'Maintenance') mCost += item.amount;
+                else oCost += item.amount;
+            });
+
+            let grandTotal = pCost + fCost + mCost + oCost;
+            let pPct = 0, fPct = 0, mPct = 0, oPct = 0;
+
+            if(grandTotal > 0) {
+                pPct = Math.round((pCost / grandTotal) * 100);
+                fPct = Math.round((fCost / grandTotal) * 100);
+                mPct = Math.round((mCost / grandTotal) * 100);
+                oPct = Math.round((oCost / grandTotal) * 100);
+            }
+
+            document.getElementById('barPetrol').style.width = pPct + '%';
+            document.getElementById('barFood').style.width = fPct + '%';
+            document.getElementById('barMaint').style.width = mPct + '%';
+            document.getElementById('barOthers').style.width = oPct + '%';
+
+            document.getElementById('pctPetrol').innerText = pPct;
+            document.getElementById('pctFood').innerText = fPct;
+            document.getElementById('pctMaint').innerText = mPct;
+            document.getElementById('pctOthers').innerText = oPct;
+        }
+
+        function exportToCSV() {
+            if(trackerData.length === 0) {
+                alert("Data ledu mavaa export cheyyడానికి!");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,Date,Category,Start KM,End KM,Route Location,Amount,Litres\n";
+            trackerData.forEach(item => {
+                csvContent += `${item.date},${item.category},${item.startKM},${item.endKM},"${item.village}",${item.amount},${item.litres || 0}\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Bike_Tracker_v4_Backup.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Init routine validation
+        window.onload = function() {
+            if(sessionStorage.getItem('isTrackerUnlocked') === 'true') {
+                document.getElementById('authScreen').classList.add('hidden');
+            }
+            togglePetrolCategoryView();
+            renderDashboard();
+            renderData();
+            updateOfflineChart();
+        };
+    </script>
+</body>
+</html>
